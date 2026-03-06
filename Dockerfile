@@ -7,11 +7,12 @@ WORKDIR /app
 # Copy package files
 COPY package*.json ./
 
-# Install all dependencies (including dev for build)
-RUN npm ci
+# Install all dependencies (including dev for build) - skip scripts to avoid build before src is copied
+RUN npm ci --ignore-scripts
 
 # Copy source files and build scripts
 COPY src ./src
+COPY scripts ./scripts
 COPY tsconfig.json ./
 COPY start.sh ./start.sh
 
