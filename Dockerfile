@@ -7,25 +7,31 @@ WORKDIR /app
 # Copy package files
 COPY package*.json ./
 
-# Install production dependencies only, skipping lifecycle scripts
-RUN npm ci --only=production --ignore-scripts
+# Install all dependencies (including dev for build)
+RUN npm ci
 
-# Copy built distribution files
-COPY dist ./dist
+# Copy source files and build scripts
+COPY src ./src
+COPY tsconfig.json ./
+COPY start.sh ./start.sh
+
+# Build the TypeScript project
+RUN npm run build
+
+# Remove dev dependencies after build
+RUN npm prune --production
 
 # Create directory for config files
-RUN mkdir -p /config
+RUN mkdir -p /app/config
+
+# Make start script executable
+RUN chmod +x /app/start.sh
 
 # Set environment variables
 ENV NODE_ENV=production
-ENV GOOGLE_DRIVE_OAUTH_CREDENTIALS=/config/gcp-oauth.keys.json
-ENV GOOGLE_DRIVE_MCP_TOKEN_PATH=/config/tokens.json
-
-# Make the main script executable
-RUN chmod +x dist/index.js
 
 # Run as non-root user
 USER node
 
-# Start the server
-ENTRYPOINT ["node", "dist/index.js"]
+# Start the server using start.sh which reads env vars into config files
+CMD ["bash", "/app/start.sh"]
